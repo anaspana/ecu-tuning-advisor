@@ -1,0 +1,20 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.ftn.sbnz" level="INFO" />
+
+    <logger name="org.drools" level="ERROR" />
+    <logger name="org.kie" level="ERROR" />
+    <logger name="org.appformer" level="ERROR" />
+    <logger name="org.eclipse.aether" level="ERROR" />
+
+    <root level="WARN">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>

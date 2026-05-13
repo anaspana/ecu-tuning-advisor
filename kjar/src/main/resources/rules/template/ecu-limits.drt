@@ -1,0 +1,66 @@
+template header
+ecuType
+brand
+maxBoost
+maxTemp
+maxTorque
+
+package template;
+
+import com.ftn.sbnz.model.models.TuningRequest;
+import com.ftn.sbnz.model.models.TuningDecision;
+import com.ftn.sbnz.model.enums.EcuType;
+
+template "ecu-limits"
+
+rule "ECU limit BLOCK - @{ecuType} @{brand}"
+    salience 100
+    when
+        $req : TuningRequest(
+            ecuType == EcuType.@{ecuType},
+            brand == "@{brand}",
+            requestedBoost > @{maxBoost} || requestedTemp > @{maxTemp} || requestedTorque > @{maxTorque}
+        )
+        not TuningDecision(vehicleId == $req.vehicleId)
+    then
+        String reason = "";
+        if ($req.getRequestedBoost() > @{maxBoost}) {
+            reason += "Pritisak turbine " + $req.getRequestedBoost() + " bar prelazi limit od @{maxBoost} bar. ";
+        }
+        if ($req.getRequestedTemp() > @{maxTemp}) {
+            reason += "Temperatura " + $req.getRequestedTemp() + "°C prelazi limit od @{maxTemp}°C. ";
+        }
+        if ($req.getRequestedTorque() > @{maxTorque}) {
+            reason += "Obrtni moment " + $req.getRequestedTorque() + " Nm prelazi limit od @{maxTorque} Nm. ";
+        }
+        insert(new TuningDecision(
+            $req.getVehicleId(),
+            TuningDecision.Decision.BLOCK,
+            reason.trim(),
+            "@{ecuType}/@{brand}"
+        ));
+        System.out.println("[Template BLOCK] Vozilo " + $req.getVehicleId() + " (@{ecuType}/@{brand}): " + reason.trim());
+end
+
+rule "ECU limit ALLOW - @{ecuType} @{brand}"
+    salience 90
+    when
+        $req : TuningRequest(
+            ecuType == EcuType.@{ecuType},
+            brand == "@{brand}",
+            requestedBoost <= @{maxBoost},
+            requestedTemp <= @{maxTemp},
+            requestedTorque <= @{maxTorque}
+        )
+        not TuningDecision(vehicleId == $req.vehicleId)
+    then
+        insert(new TuningDecision(
+            $req.getVehicleId(),
+            TuningDecision.Decision.ALLOW,
+            "Svi parametri unutar limita: boost <= @{maxBoost} bar, temp <= @{maxTemp}°C, torque <= @{maxTorque} Nm.",
+            "@{ecuType}/@{brand}"
+        ));
+        System.out.println("[Template ALLOW] Vozilo " + $req.getVehicleId() + " (@{ecuType}/@{brand}): tuning odobren.");
+end
+
+end template

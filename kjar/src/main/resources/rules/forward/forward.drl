@@ -8,6 +8,12 @@ import com.ftn.sbnz.model.models.ToolRecommendation;
 import com.ftn.sbnz.model.enums.ComponentStatus;
 import com.ftn.sbnz.model.enums.EcuType;
 
+
+// P0401 - DTC kod koji znaci da EGR ventil ne propusta dovoljno gasova, tj da je zapusen ili ne radi ispravno.
+// P0402 - DTC kod koji znaci da EGR propusta previse gasova.
+// P242F - DTC kod koji znaci da je DPF filter preopterecen pepelom.
+// P2002 - DTC kod koji znaci da DPF filter radi sa niskom efikasnoscu.
+
 // =============================================================================
 // NIVO 1: DTC kod → status komponente
 // Svaki DTC kod (greska koju auto prijavljuje) mapira se na status komponente.
@@ -296,7 +302,7 @@ rule "EGR CLEAN -> mehanicka intervencija"
             "EGR_CLEAN_RECOMMENDED",
             "Mehanicka intervencija",
             "Fizicko ciscenje u servisu",
-            "Ventil je dovoljno mlad da ga vrijedi ocistiti. Mehanicko ciscenje EGR ventila bez softverskih izmena.",
+            "Ventil je dovoljno mlad da ga vredi ocistiti. Mehanicko ciscenje EGR ventila bez softverskih izmena.",
             $vid
         ));
         System.out.println("[Nivo 3] Vozilo " + $vid + ": Preporuka -> Mehanicko ciscenje EGR");
