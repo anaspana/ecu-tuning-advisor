@@ -1,1 +1,100 @@
 package cep;
+
+import com.ftn.sbnz.model.events.ExhaustTempEvent;
+import com.ftn.sbnz.model.events.OilPressureEvent;
+import com.ftn.sbnz.model.events.HighTempWarning;
+import com.ftn.sbnz.model.events.ThermalOverloadEvent;
+import com.ftn.sbnz.model.events.EngineCriticalEvent;
+import com.ftn.sbnz.model.models.ActiveLimits;
+import com.ftn.sbnz.model.models.EngineStatus;
+
+global com.ftn.sbnz.service.NotificationService notificationService;
+
+// =============================================================================
+// SCENARIO 1 - Korak 1:
+// Svaki ExhaustTempEvent koji prelazi maxTemp -> jedan HighTempWarning
+// =============================================================================
+
+rule "Detektuj prekoracenje temperature izduvnih gasova"
+    when
+        $limits : ActiveLimits($vid : vehicleId, $maxTemp : maxTemp)
+        $event  : ExhaustTempEvent(
+                      vehicleId == $vid,
+                      temperature > $maxTemp
+                  )
+        // Svaki ExhaustTempEvent je razlicit objekat - Drools ne okida isti par dva puta
+        // not uslov je uklonjen jer je blokirao vise klikova iste temperature u frontend modu
+    then
+        insert(new HighTempWarning($vid, $event.getTemperature(), $maxTemp));
+        notificationService.sendHighTempWarning(
+            $vid, $event.getTemperature(), $maxTemp
+        );
+end
+
+// =============================================================================
+// SCENARIO 1 - Korak 2:
+// Vise od 3 HighTempWarning u 20 sekundi -> ThermalOverloadEvent -> Safe mode
+// =============================================================================
+
+rule "ThermalOverload - vise od 3 prekoracenja temperature u 20 sekundi"
+    when
+        $limits : ActiveLimits($vid : vehicleId)
+        not EngineStatus(vehicleId == $vid, status == EngineStatus.Status.SAFE_MODE)
+        Number(intValue > 3) from accumulate(
+            $w : HighTempWarning(vehicleId == $vid)
+                 over window:time(20s),
+            count($w)
+        )
+    then
+        String reason = "Temperatura izduvnih gasova prekoracila limit vise od 3 puta u 20 sekundi!";
+        insert(new ThermalOverloadEvent($vid, reason));
+        insert(new EngineStatus($vid, EngineStatus.Status.SAFE_MODE, reason));
+        notificationService.sendThermalOverloadAlert($vid);
+        notificationService.sendSafeModeActivated($vid, reason);
+end
+
+// =============================================================================
+// SCENARIO 2:
+// Pritisak ulja < 1.2 bara pri RPM > 2500 kontinuirano 3 sekunde -> EngineCriticalEvent
+//
+// Pristup: mora postojati kriticno ocitavanje staro NAJMANJE 3 sekunde
+// i u celom prozoru od 3s nema ni jednog normalnog ocitavanja
+// =============================================================================
+
+rule "EngineCritical - nizak pritisak ulja pri visokim obrtajima 3 sekunde"
+    when
+        $limits : ActiveLimits($vid : vehicleId)
+        not EngineStatus(vehicleId == $vid, status == EngineStatus.Status.CRITICAL)
+        // mora postojati kriticno ocitavanje koje je doslo pre 3+ sekunde
+        $first : OilPressureEvent(
+                     vehicleId == $vid,
+                     pressureBar < 1.2,
+                     rpm > 2500
+                 )
+        // mora postojati kriticno ocitavanje POSLE $first (da je prozor "pun")
+        $last : OilPressureEvent(
+                    vehicleId == $vid,
+                    pressureBar < 1.2,
+                    rpm > 2500,
+                    this != $first,
+                    // $last je dosao najmanje 3s posle $first
+                    this after[3s, *] $first
+                )
+        // u celom periodu izmedju $first i $last nema normalnog ocitavanja
+        not OilPressureEvent(
+                vehicleId == $vid,
+                pressureBar >= 1.2 || rpm <= 2500,
+                this after $first,
+                this before $last
+            )
+    then
+        String reason = String.format(
+            "Pritisak ulja %.2f bara pri %d RPM u kontinuitetu 3 sekunde!",
+            $last.getPressureBar(), $last.getRpm()
+        );
+        insert(new EngineCriticalEvent($vid, reason));
+        insert(new EngineStatus($vid, EngineStatus.Status.CRITICAL, reason));
+        notificationService.sendOilPressureCritical(
+            $vid, $last.getPressureBar(), $last.getRpm()
+        );
+end
