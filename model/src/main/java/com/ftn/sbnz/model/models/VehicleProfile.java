@@ -33,8 +33,6 @@ public class VehicleProfile implements Serializable {
     /** Maksimalni obrtni moment koji menjac moze da izdrzi (Nm) */
     private double maxGearboxTorque;
 
-    // --- Fabrici limiti (ucitavaju se po ECU profilu) ---
-
     /** Maksimalna dozvoljena temperatura izduvnih gasova (°C) */
     private double maxExhaustTemp;
 

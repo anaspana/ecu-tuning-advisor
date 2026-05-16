@@ -3,7 +3,6 @@ package com.ftn.sbnz.service;
 import com.ftn.sbnz.model.dto.DiagnosisRequest;
 import com.ftn.sbnz.model.dto.DiagnosisResponse;
 import com.ftn.sbnz.model.models.*;
-import com.ftn.sbnz.model.enums.EcuType;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.slf4j.Logger;
@@ -11,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,18 +32,24 @@ public class DiagnosisService {
         KieSession kieSession = kieContainer.newKieSession("forwardKsession");
 
         try {
-            // Fabrickii limiti po ECU tipu
-            VehicleProfile profile = buildProfile(request);
-        profile.setVehicleId(request.getVehicleId());
+            // Kreiraj profil vozila iz zahteva
+            // Fabricki limiti (maxExhaustTemp, maxBoostPressure) se ne postavljaju ovde -
+            // njima upravlja Template mehanizam koji ih ucitava iz ecu-limits.csv
+            VehicleProfile profile = new VehicleProfile();
+            profile.setVehicleId(request.getVehicleId());
+            profile.setEcuType(request.getEcuType());
+            profile.setVehicleBrand(request.getVehicleBrand());
+            profile.setMileage(request.getMileage());
+            profile.setMaxGearboxTorque(request.getMaxGearboxTorque());
             kieSession.insert(profile);
 
-            // Ubacujemo sve DTC kodove
+            // Ubaci sve DTC kodove
             for (String code : request.getDtcCodes()) {
                 kieSession.insert(new DtcCode(code, request.getVehicleId()));
             }
 
             kieSession.fireAllRules();
-
+	
             // Prikupljamo rezultate iz radne memorije
             Collection<?> facts = kieSession.getObjects();
 
@@ -77,31 +81,5 @@ public class DiagnosisService {
         } finally {
             kieSession.dispose();
         }
-    }
-
-    /**
-     * Kreira VehicleProfile i postavlja fabricke limite na osnovu ECU tipa.
-     */
-    private VehicleProfile buildProfile(DiagnosisRequest request) {
-        VehicleProfile profile = new VehicleProfile();
-        profile.setEcuType(request.getEcuType());
-        profile.setVehicleBrand(request.getVehicleBrand());
-        profile.setMileage(request.getMileage());
-        profile.setMaxGearboxTorque(request.getMaxGearboxTorque());
-
-        // Fabrici limiti po ECU profilu (ovo ce u Domacem 4 biti Templates)
-        if (request.getEcuType() == EcuType.BOSCH_EDC17) {
-            profile.setMaxExhaustTemp(850.0);
-            profile.setMaxBoostPressure(1.8);
-        } else if (request.getEcuType() == EcuType.BOSCH_EDC16) {
-            profile.setMaxExhaustTemp(800.0);
-            profile.setMaxBoostPressure(1.5);
-        } else {
-            // Siemens SID807 i ostali
-            profile.setMaxExhaustTemp(820.0);
-            profile.setMaxBoostPressure(1.6);
-        }
-
-        return profile;
     }
 }

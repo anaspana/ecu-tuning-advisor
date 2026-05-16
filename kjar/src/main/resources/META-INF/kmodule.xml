@@ -13,6 +13,7 @@
     <!-- CEP - real-time telemetrija -->
     <kbase name="cepKbase" eventProcessingMode="stream" packages="cep">
         <ksession name="cepKsession" clockType="pseudo"/>
+        <ksession name="cepKsessionRealtime" clockType="realtime"/>
     </kbase>
 
 </kmodule>

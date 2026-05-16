@@ -57,10 +57,10 @@ rule "ECU limit ALLOW - @{ecuType} @{brand}"
         insert(new TuningDecision(
             $req.getVehicleId(),
             TuningDecision.Decision.ALLOW,
-            "Svi parametri unutar limita: boost <= @{maxBoost} bar, temp <= @{maxTemp}°C, torque <= @{maxTorque} Nm.",
+            "Svi parametri unutar limita: boost <= @{maxBoost} bar, temp <= @{maxTemp}C, torque <= @{maxTorque} Nm.",
             "@{ecuType}/@{brand}"
         ));
-        System.out.println("[Template ALLOW] Vozilo " + $req.getVehicleId() + " (@{ecuType}/@{brand}): tuning odobren.");
+        System.out.println("[Template ALLOW] Vozilo " + $req.getVehicleId() + " (@{ecuType}/@{brand}): tuning odobren");
 end
 
 end template

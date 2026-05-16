@@ -23,62 +23,56 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Servis koji ucitava ECU limite iz CSV fajla, kompajlira DRT template
- * u DRL i pokrece Drools sesiju za proveru zahteva za tuning.
- *
- * CSV format (templ.csv):
- *   ecuType,brand,maxBoost,maxTemp,maxTorque
- *   BOSCH_EDC17,VW,1.8,850,400,750
- *   ...
- *
- */
+// Servis koji ucitava ECU limite iz CSV fajla, kompajlira DRT template
+// u DRL i pokrece Drools sesiju za proveru zahteva za tjuning
+
+// CSV format (ecu-limits.csv):
+//   ecuType,brand,maxBoost,maxTemp,maxTorque
+//   BOSCH_EDC17,VW,1.8,850,400,750
+//   ...
+
 @Service
 public class TemplateService {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateService.class);
 
-    /** Putanja do CSV fajla sa ECU limitima (u classpath-u service modula) */
     private static final String CSV_PATH = "/rules/template/ecu-limits.csv";
-
-    /** Putanja do DRT template fajla (u classpath-u kjar modula) */
     private static final String DRT_PATH = "/rules/template/ecu-limits.drt";
 
-    /**
-     * Proverava da li je zahtev za tuning dozvoljeno primeniti.
-     *
-     * @param request zahtev sa ECU tipom, markom i trazenim parametrima
-     * @return TuningDecision sa ALLOW ili BLOCK odlukom
-     */
+    // Proverava da li je zahtev za tuning dozvoljeno primeniti.
+    //
+    // @param request zahtev sa ECU tipom, markom i trazenim parametrima
+    // @return TuningDecision sa ALLOW ili BLOCK odlukom
+
     public TuningDecision evaluateTuning(TuningRequest request) {
         log.info("Evaluacija tuning zahteva za vozilo: {} ({}/{})",
                 request.getVehicleId(), request.getEcuType(), request.getBrand());
 
-        // 1. Ucitaj CSV i pripremi podatke za template
+        // ucitaj CSV i pripremi podatke za template
         String[][] tableData = loadCsvData();
 
-        // 2. Ucitaj DRT template
+        // ucitaj DRT template
         InputStream drtStream = getClass().getResourceAsStream(DRT_PATH);
         if (drtStream == null) {
             throw new IllegalStateException("DRT template fajl nije pronadjen na: " + DRT_PATH);
         }
 
-        // 3. Kompajliraj template + podatke u DRL
+        // kompajliraj template + podatke u DRL
         DataProvider dataProvider = new ArrayDataProvider(tableData);
         DataProviderCompiler compiler = new DataProviderCompiler();
         String drl = compiler.compile(dataProvider, drtStream);
 
         // log.debug("Generisani DRL:\n{}", drl);
 
-        // 4. Napravi KieSession iz generisanog DRL-a
+        // napravi KieSession iz generisanog DRL-a
         KieSession kieSession = buildKieSession(drl);
 
         try {
-            // 5. Ubaci zahtev u radnu memoriju i pokrni pravila
+            // ubaci zahtev u radnu memoriju i pokrni pravila
             kieSession.insert(request);
             kieSession.fireAllRules();
 
-            // 6. Pokupi odluku iz radne memorije
+            // pokupi odluku iz radne memorije
             Collection<?> facts = kieSession.getObjects();
             Optional<TuningDecision> decision = facts.stream()
                     .filter(f -> f instanceof TuningDecision)
@@ -90,7 +84,7 @@ public class TemplateService {
                         request.getVehicleId(), decision.get().getDecision(), decision.get().getReason());
                 return decision.get();
             } else {
-                // Nema pravila za ovu kombinaciju ECU/brand
+                // nema pravila za ovu kombinaciju ECU/brand
                 String msg = "Nema definisanih limita za kombinaciju: "
                         + request.getEcuType() + "/" + request.getBrand();
                 log.warn(msg);
@@ -103,10 +97,9 @@ public class TemplateService {
         }
     }
 
-    /**
-     * Ucitava CSV fajl i vraca dvodimenzionalni niz stringova
-     * (bez header reda, samo podaci: ecuType, brand, maxBoost, maxTemp, maxTorque)
-     */
+    // Ucitava CSV fajl i vraca dvodimenzionalni niz stringova
+    // (bez header reda, samo podaci: ecuType, brand, maxBoost, maxTemp, maxTorque)
+
     private String[][] loadCsvData() {
         InputStream csvStream = getClass().getResourceAsStream(CSV_PATH);
         if (csvStream == null) {
@@ -126,8 +119,6 @@ public class TemplateService {
                 if (line.isEmpty()) continue;
 
                 String[] cols = line.split(",");
-                // cols: [ecuType, brand, maxBoost, maxTemp, maxTorque]
-                // template header: ecuType, brand, maxBoost, maxTemp, maxTorque
                 rows.add(new String[]{
                         cols[0].trim(), // ecuType
                         cols[1].trim(), // brand
@@ -144,9 +135,7 @@ public class TemplateService {
         return rows.toArray(new String[0][]);
     }
 
-    /**
-     * Kreira KieSession iz generisanog DRL stringa koristeci KieHelper.
-     */
+    // Kreira KieSession iz generisanog DRL stringa koristeci KieHelper
     private KieSession buildKieSession(String drl) {
         KieHelper kieHelper = new KieHelper();
         kieHelper.addContent(drl, ResourceType.DRL);

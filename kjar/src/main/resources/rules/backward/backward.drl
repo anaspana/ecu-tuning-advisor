@@ -1,1 +1,47 @@
 package backward;
+
+import com.ftn.sbnz.model.models.HardwarePrerequisite;
+import com.ftn.sbnz.model.models.VehicleHasComponent;
+import com.ftn.sbnz.model.models.MissingComponent;
+import com.ftn.sbnz.model.models.TuningRequest;
+
+// =============================================================================
+// BACKWARD CHAINING QUERY
+// Rekurzivno proverava da li je komponenta x preduslov za y,
+// direktno ili indirektno kroz lanac zavisnosti
+//
+// Bazni slucaj:   postoji direktna HardwarePrerequisite(x, y) veza
+// Rekurzivni slucaj: postoji z koje je direktno potrebno za y,
+//                    i x je potreban za z (poziva sam sebe)
+// =============================================================================
+
+query isPrerequisiteOf(String x, String y)
+    HardwarePrerequisite(x, y;)
+    or
+    (HardwarePrerequisite(z, y;) and isPrerequisiteOf(x, z;))
+end
+
+// =============================================================================
+// PRAVILO: Detektuj svaku komponentu koja nedostaje vozilu
+// Okidac je TuningRequest - korisnik trazi odredjeni nivo tuninga
+// Query prolazi kroz celu hijerarhiju preduslova i za svaku
+// komponentu koja nedostaje kreira MissingComponent cinjenicu
+// =============================================================================
+
+rule "Detektuj nedostajuce hardverske preduslove za trazeni nivo tuninga"
+    when
+        // korisnik trazi odredjeni nivo tuninga
+        $req : TuningRequest($vid : vehicleId, $stage : tuningStage)
+        // query pronalazi sve komponente koje su preduslov za taj nivo
+        isPrerequisiteOf($component, $stage;)
+        // vozilo nema tu komponentu
+        not VehicleHasComponent(vehicleId == $vid, componentName == $component)
+        // nije vec detektovano da nedostaje ista komponenta
+        not MissingComponent(vehicleId == $vid, componentName == $component,
+                             requiredForStage == $stage)
+    then
+        insert(new MissingComponent($vid, $component, $stage));
+        System.out.println("[Backward] Vozilo " + $vid +
+            ": nedostaje komponenta '" + $component +
+            "' (preduslov za " + $stage + ")");
+end

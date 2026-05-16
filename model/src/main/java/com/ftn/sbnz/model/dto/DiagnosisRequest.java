@@ -16,7 +16,6 @@ import java.util.List;
 @AllArgsConstructor
 public class DiagnosisRequest {
 
-    // Jedinstveni identifikator vozila
     private String vehicleId;
 
     // Tip ECU racunara
