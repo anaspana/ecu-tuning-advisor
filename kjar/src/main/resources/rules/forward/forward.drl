@@ -15,7 +15,7 @@ import com.ftn.sbnz.model.enums.EcuType;
 // P2002 - DTC kod koji znaci da DPF filter radi sa niskom efikasnoscu.
 
 // =============================================================================
-// NIVO 1: DTC kod → status komponente
+// NIVO 1: DTC kod -> status komponente
 // Svaki DTC kod (greska koju auto prijavljuje) mapira se na status komponente.
 // =============================================================================
 
@@ -60,7 +60,7 @@ rule "DTC P2002 - DPF niska efikasnost"
 end
 
 // =============================================================================
-// NIVO 2: Status komponente + podaci o vozilu → preporucena akcija
+// NIVO 2: Status komponente + podaci o vozilu -> preporucena akcija
 // VehicleProfile se vezuje za konkretno vozilo pomocu vehicleId.
 // =============================================================================
 
@@ -137,7 +137,7 @@ rule "EGR prekoracenje protoka -> preporuci zamenu EGR"
 end
 
 // =============================================================================
-// NIVO 3: Preporucena akcija + ECU tip → preporuceni alat
+// NIVO 3: Preporucena akcija + ECU tip -> preporuceni alat
 // actionType dodat u ToolRecommendation radi sprecavanja kolizije kada isti
 // alat treba biti preporucen i za EGR OFF i za DPF OFF na istom vozilu
 // =============================================================================
@@ -370,4 +370,101 @@ rule "DPF OFF + SID807 -> Alientech K-TAG Bench"
             $vid
         ));
         System.out.println("[Nivo 3] Vozilo " + $vid + ": Alat -> Alientech K-TAG (SID807, DPF OFF)");
+end
+
+import com.ftn.sbnz.model.models.EngineLoadReading;
+import com.ftn.sbnz.model.models.EngineWearStatus;
+import com.ftn.sbnz.model.models.TuningBlockedDecision;
+import com.ftn.sbnz.model.models.TuningRequest;
+
+// =============================================================================
+// ACCUMULATE: Istorijsko opterecenje motora -> klasifikacija habanja
+// Agregira sva EngineLoadReading očitavanja po vehicleId i racuna prosek.
+// Ako je prosek > 75% -> HIGH_WEAR, inace -> NORMAL_WEAR.
+// =============================================================================
+
+rule "Accumulate - HIGH_WEAR ako je prosecno opterecenje > 75%"
+    salience 70
+    when
+        // Uzimamo vehicleId iz profila vozila koji mora biti u sesiji
+        $profile : VehicleProfile($vid : vehicleId)
+        not EngineWearStatus(vehicleId == $vid)
+        $avgLoad : Double(doubleValue > 75.0) from accumulate(
+            EngineLoadReading(vehicleId == $vid, $load : engineLoadPercent),
+            average($load)
+        )
+    then
+        insert(new EngineWearStatus(
+            $vid,
+            EngineWearStatus.WearLevel.HIGH_WEAR,
+            $avgLoad
+        ));
+        System.out.println("[Accumulate] Vozilo " + $vid +
+            ": prosečno opterećenje " + String.format("%.1f", $avgLoad) +
+            "% -> HIGH_WEAR");
+end
+
+rule "Accumulate - NORMAL_WEAR ako je prosečno opterećenje <= 75%"
+    salience 70
+    when
+        $profile : VehicleProfile($vid : vehicleId)
+        not EngineWearStatus(vehicleId == $vid)
+        $avgLoad : Double(doubleValue <= 75.0) from accumulate(
+            EngineLoadReading(vehicleId == $vid, $load : engineLoadPercent),
+            average($load)
+        )
+    then
+        insert(new EngineWearStatus(
+            $vid,
+            EngineWearStatus.WearLevel.NORMAL_WEAR,
+            $avgLoad
+        ));
+        System.out.println("[Accumulate] Vozilo " + $vid +
+            ": prosečno opterećenje " + String.format("%.1f", $avgLoad) +
+            "% -> NORMAL_WEAR");
+end
+
+// =============================================================================
+// BLOKADA: HIGH_WEAR + agresivan tjuning -> TuningBlockedDecision
+// =============================================================================
+
+rule "Blokiraj Stage 1 i Stage 2 za visoko istroson motor"
+    salience 60
+    when
+        $wear  : EngineWearStatus(wearLevel == EngineWearStatus.WearLevel.HIGH_WEAR,
+                                  $vid : vehicleId)
+        $req   : TuningRequest(vehicleId == $vid,
+                               tuningStage in ("Stage1", "Stage2"),
+                               $stage : tuningStage)
+        not TuningBlockedDecision(vehicleId == $vid, blockedStage == $stage)
+    then
+        String reason = String.format(
+            "Rejected: High engine wear detected (avg load %.1f%% > 75%%). " +
+            "Eco map recommended to protect engine.",
+            $wear.getAverageLoadPercent()
+        );
+        insert(new TuningBlockedDecision($vid, $req.getTuningStage(), reason));
+        System.out.println("[Accumulate] Vozilo " + $vid +
+            ": BLOKIRAN " + $req.getTuningStage() + " - " + reason);
+end
+
+// =============================================================================
+// ECO PREPORUKA: HIGH_WEAR automatski preporucuje Eco mapu
+// =============================================================================
+
+rule "Preporuci Eco mapu za visoko istroson motor"
+    salience 55
+    when
+        EngineWearStatus(wearLevel == EngineWearStatus.WearLevel.HIGH_WEAR,
+                         $vid : vehicleId)
+        not TuningAction(vehicleId == $vid, actionType == "ECO_MAP_RECOMMENDED")
+    then
+        insert(new TuningAction(
+            "ECO_MAP_RECOMMENDED",
+            "Motor pokazuje visoko prosečno opterećenje (>75%). " +
+            "Preporučuje se iskljućivo Eco mapa radi očuvanja motora.",
+            $vid
+        ));
+        System.out.println("[Accumulate] Vozilo " + $vid +
+            ": Preporučena Eco mapa zbog HIGH_WEAR.");
 end
