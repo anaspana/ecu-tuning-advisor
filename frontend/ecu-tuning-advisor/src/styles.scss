@@ -1,0 +1,348 @@
+// ----------------------------------------------------------------
+// ECU Tuning Advisor - globalni dark theme
+// ----------------------------------------------------------------
+
+@import "primeicons/primeicons.css";
+
+// --- Boje ---
+:root {
+  --bg-base:       #121212;
+  --bg-card:       #1e1e1e;
+  --bg-card-light: #2d2d2d;
+  --bg-input:      #252525;
+
+  --accent-green:  #00e5a0;
+  --accent-red:    #ff5c5c;
+  --accent-blue:   #4dabf7;
+  --accent-orange: #ffa94d;
+  --accent-yellow: #ffe066;
+
+  --text-primary:   #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-muted:     #606060;
+
+  --border-subtle:  #2a2a2a;
+  --border-accent:  #333333;
+
+  --radius-card: 12px;
+  --radius-sm:   6px;
+
+  --glow-green: 0 0 16px rgba(0, 229, 160, 0.25);
+  --glow-red:   0 0 16px rgba(255, 92, 92, 0.35);
+  --glow-blue:  0 0 16px rgba(77, 171, 247, 0.25);
+}
+
+// --- Reset & base ---
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  margin: 0; 
+  padding: 0;
+}
+
+.main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+// --- PrimeNG overrides - dark theme ---
+
+// Card
+.p-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-accent) !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+  color: var(--text-primary) !important;
+
+  .p-card-title { color: var(--text-primary) !important; font-size: 1.1rem; font-weight: 600; }
+  .p-card-subtitle { color: var(--text-secondary) !important; font-size: 0.85rem; }
+  .p-card-content { padding-top: 8px !important; }
+  .p-card-body { padding: 1.5rem !important; }
+}
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-card-light);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: var(--accent-blue);
+    background: rgba(77, 171, 247, 0.06);
+  }
+}
+
+// Button
+.p-button {
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  transition: box-shadow 0.2s, transform 0.1s !important;
+
+  &:active { transform: scale(0.97) !important; }
+
+  &.p-button-success {
+    background: var(--accent-green) !important;
+    border-color: var(--accent-green) !important;
+    color: #000 !important;
+    &:hover { box-shadow: var(--glow-green) !important; }
+  }
+  &.p-button-danger {
+    background: var(--accent-red) !important;
+    border-color: var(--accent-red) !important;
+    &:hover { box-shadow: var(--glow-red) !important; }
+  }
+  &.p-button-info {
+    background: var(--accent-blue) !important;
+    border-color: var(--accent-blue) !important;
+    color: #000 !important;
+    &:hover { box-shadow: var(--glow-blue) !important; }
+  }
+  &.p-button-secondary {
+    background: var(--bg-card-light) !important;
+    border-color: var(--border-accent) !important;
+    color: var(--text-primary) !important;
+  }
+  &.p-button-outlined {
+    background: transparent !important;
+    &.p-button-success { color: var(--accent-green) !important; border-color: var(--accent-green) !important; }
+    &.p-button-danger  { color: var(--accent-red)   !important; border-color: var(--accent-red)   !important; }
+  }
+}
+
+// Input
+.p-inputtext, .p-inputnumber-input {
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border-accent) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-primary) !important;
+  transition: border-color 0.2s !important;
+
+  &:focus {
+    border-color: var(--accent-blue) !important;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.15) !important;
+    outline: none !important;
+  }
+}
+
+// Dropdown
+.p-dropdown {
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border-accent) !important;
+  border-radius: var(--radius-sm) !important;
+
+  .p-dropdown-label { color: var(--text-primary) !important; }
+  .p-dropdown-trigger { color: var(--text-secondary) !important; }
+}
+.p-dropdown-panel {
+  background: var(--bg-card-light) !important;
+  border: 1px solid var(--border-accent) !important;
+
+  .p-dropdown-item {
+    color: var(--text-primary) !important;
+    &:hover, &.p-highlight { background: rgba(77,171,247,0.12) !important; }
+  }
+}
+
+// Chips
+.p-chips {
+  .p-chips-input-token input { background: transparent !important; color: var(--text-primary) !important; }
+  .p-chips-token {
+    background: rgba(77,171,247,0.15) !important;
+    color: var(--accent-blue) !important;
+    border-radius: 4px !important;
+  }
+}
+
+// Tag
+.p-tag {
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  padding: 3px 10px !important;
+
+  &.p-tag-success  { background: rgba(0,229,160,0.15) !important; color: var(--accent-green) !important; }
+  &.p-tag-danger   { background: rgba(255,92,92,0.15)  !important; color: var(--accent-red)   !important; }
+  &.p-tag-warning  { background: rgba(255,169,77,0.15) !important; color: var(--accent-orange)!important; }
+  &.p-tag-info     { background: rgba(77,171,247,0.15) !important; color: var(--accent-blue)  !important; }
+}
+
+// Message
+.p-message {
+  border-radius: var(--radius-sm) !important;
+  &.p-message-success { background: rgba(0,229,160,0.1) !important; border-color: var(--accent-green) !important; }
+  &.p-message-error   { background: rgba(255,92,92,0.1) !important; border-color: var(--accent-red)   !important; }
+  &.p-message-warn    { background: rgba(255,169,77,0.1)!important; border-color: var(--accent-orange)!important; }
+  &.p-message-info    { background: rgba(77,171,247,0.1)!important; border-color: var(--accent-blue)  !important; }
+}
+
+// Toast
+.p-toast .p-toast-message {
+  background: var(--bg-card-light) !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+}
+
+// Divider
+.p-divider::before { border-color: var(--border-accent) !important; }
+
+// Progress bar
+.p-progressbar {
+  background: var(--bg-card-light) !important;
+  border-radius: 4px !important;
+  height: 8px !important;
+  .p-progressbar-value { border-radius: 4px !important; }
+}
+
+// Knob
+.p-knob text { fill: var(--text-primary) !important; }
+
+// Checkbox
+.p-checkbox .p-checkbox-box {
+  background: var(--bg-input) !important;
+  border-color: var(--border-accent) !important;
+  border-radius: 4px !important;
+  &.p-highlight { background: var(--accent-blue) !important; border-color: var(--accent-blue) !important; }
+}
+
+// MultiSelect
+.p-multiselect {
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border-accent) !important;
+  border-radius: var(--radius-sm) !important;
+  .p-multiselect-label { color: var(--text-primary) !important; }
+}
+.p-multiselect-panel {
+  background: var(--bg-card-light) !important;
+  border: 1px solid var(--border-accent) !important;
+  .p-multiselect-item { color: var(--text-primary) !important; &:hover { background: rgba(77,171,247,0.12) !important; } }
+}
+
+// Table
+.p-datatable {
+  .p-datatable-thead > tr > th {
+    background: var(--bg-card-light) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border-accent) !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+  .p-datatable-tbody > tr {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-subtle) !important;
+    &:hover { background: rgba(255,255,255,0.03) !important; }
+  }
+}
+
+// Timeline
+.p-timeline-event-marker { border-color: var(--accent-blue) !important; background: var(--bg-card) !important; }
+.p-timeline-event-connector { background: var(--border-accent) !important; }
+
+// --- Utility klase ---
+.page-header {
+  margin-bottom: 32px;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.decision-banner {
+  border-radius: var(--radius-card);
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+
+  &.allow {
+    background: rgba(0, 229, 160, 0.08);
+    border: 1px solid var(--accent-green);
+    box-shadow: var(--glow-green);
+  }
+  &.block {
+    background: rgba(255, 92, 92, 0.08);
+    border: 1px solid var(--accent-red);
+    box-shadow: var(--glow-red);
+  }
+
+  .decision-icon { font-size: 2rem; }
+  .decision-text {
+    h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+    p  { color: var(--text-secondary); font-size: 0.9rem; }
+  }
+}
+
+.metric-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.metric-card {
+  background: var(--bg-card-light);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  flex: 1;
+  min-width: 140px;
+
+  .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .metric-value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
+  .metric-unit  { font-size: 0.8rem; color: var(--text-secondary); margin-left: 4px; }
+}
+
+.safe-mode-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 92, 92, 0.06);
+  pointer-events: none;
+  border: 2px solid var(--accent-red);
+  border-radius: 0;
+  z-index: 50;
+  animation: pulse-border 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .main-content { padding: 16px; }
+}
