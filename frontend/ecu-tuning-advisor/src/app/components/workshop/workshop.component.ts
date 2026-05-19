@@ -158,10 +158,10 @@ export class WorkshopComponent {
   // enum vrednost u citljiv naziv za prikaz korisniku
   formatComponentStatus(status: string): string {
     const map: Record<string, string> = {
-      'EGR_CLOGGED':           'EGR ventil — zapušen',
-      'EGR_EXCESSIVE_FLOW':    'EGR ventil — prekomerni protok',
-      'DPF_ASH_OVERLOADED':    'DPF filter — zasićen pepelom',
-      'DPF_LOW_EFFICIENCY':    'DPF filter — niska efikasnost',
+      'EGR_CLOGGED':           'EGR ventil - zapušen',
+      'EGR_EXCESSIVE_FLOW':    'EGR ventil - prekomerni protok',
+      'DPF_ASH_OVERLOADED':    'DPF filter - zasićen pepelom',
+      'DPF_LOW_EFFICIENCY':    'DPF filter - niska efikasnost',
     };
     return map[status] ?? status;
   }

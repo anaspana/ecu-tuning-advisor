@@ -88,14 +88,14 @@
         <p-divider></p-divider>
 
         <div class="grid-2">
-          <div>
+          <!-- <div>
             <div class="section-label">Temperatura (°C)</div>
             <p-inputNumber [(ngModel)]="exhaustTemp" [min]="0" [max]="1100" [style]="{'width':'100%'}"></p-inputNumber>
             <div style="margin-top: 4px; font-size: 0.75rem;"
               [style.color]="exhaustTemp > 850 ? 'var(--accent-red)' : 'var(--text-muted)'">
               {{ exhaustTemp > 850 ? '⚠ Iznad limita 850°C' : 'Ispod limita ✓' }}
             </div>
-          </div>
+          </div> -->
           <div>
             <div class="section-label">RPM</div>
             <p-inputNumber [(ngModel)]="rpmTemp" [min]="500" [max]="8000" [step]="100" [style]="{'width':'100%'}"></p-inputNumber>
@@ -143,10 +143,10 @@
           <div>
             <div class="section-label">Pritisak (bar)</div>
             <p-inputNumber [(ngModel)]="oilPressure" [minFractionDigits]="1" [min]="0" [max]="10" [style]="{'width':'100%'}"></p-inputNumber>
-            <div style="margin-top: 4px; font-size: 0.75rem;"
+            <!-- <div style="margin-top: 4px; font-size: 0.75rem;"
               [style.color]="oilPressure < 1.2 ? 'var(--accent-red)' : 'var(--text-muted)'">
               {{ oilPressure < 1.2 ? '⚠ Kritično nizak!' : 'Normalan ✓' }}
-            </div>
+            </div> -->
           </div>
           <div>
             <div class="section-label">RPM</div>

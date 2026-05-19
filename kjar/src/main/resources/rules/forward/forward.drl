@@ -169,7 +169,7 @@ rule "EGR OFF + EDC17 -> PCMflash Bench mode"
         insert(new ToolRecommendation(
             "EGR_OFF_RECOMMENDED",
             "PCMflash",
-            "Bench mode (racunar skinut iz vozila)",
+            "Bench mode",
             "EDC17 zahteva Bench mode - racunar se fizicki skida i spaja direktno. Alternativa: Flex tool",
             $vid
         ));
@@ -270,7 +270,7 @@ rule "EGR REPLACE + EDC17 -> PCMflash Bench mode"
         insert(new ToolRecommendation(
             "EGR_REPLACE_RECOMMENDED",
             "PCMflash",
-            "Bench mode (racunar skinut iz vozila)",
+            "Bench mode",
             "EDC17: nakon zamene EGR ventila, upisati softver via PCMflash u Bench modu.",
             $vid
         ));

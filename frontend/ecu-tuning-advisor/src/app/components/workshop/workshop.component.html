@@ -203,8 +203,10 @@
               background: var(--bg-card-light); border-radius: var(--radius-sm); padding: 8px 14px;">
             <div style="display: flex; align-items: center; gap: 10px;">
               <i class="pi pi-wrench" style="color: var(--accent-blue); font-size: 0.9rem;"></i>
-              <span style="font-weight: 600; font-size: 0.9rem;">{{ t.toolName }}</span>
-              <span *ngIf="t.protocol" style="font-size: 0.8rem; color: var(--text-muted);">— {{ t.protocol }}</span>
+              <div>
+                <div style="font-weight: 600; font-size: 0.9rem;">{{ t.toolName }}</div>
+                <div *ngIf="t.protocol" style="font-size: 0.75rem; color: var(--text-muted);">{{ t.protocol }}</div>
+              </div>
             </div>
             <p-tag [value]="t.actionType" severity="info" [style]="{'font-size': '0.72rem'}"></p-tag>
           </div>
