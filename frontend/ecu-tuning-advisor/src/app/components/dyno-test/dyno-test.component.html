@@ -1,0 +1,270 @@
+<!-- Safe mode overlay -->
+<div *ngIf="safeMode" class="safe-mode-overlay"></div>
+
+<div class="page-header">
+  <h1><i class="pi pi-chart-line" style="color: var(--accent-blue); margin-right: 10px;"></i>Dyno Test</h1>
+  <p>CEP - Complex Event Processing • Live telemetrija senzora</p>
+</div>
+
+<!-- Status bar na vrhu -->
+<div class="status-bar" [class.safe-mode]="safeMode" [class.warning]="warningCount > 0 && !safeMode">
+  <div class="status-indicators">
+    <!-- Safe mode -->
+    <div class="status-indicator" [class.active-danger]="safeMode">
+      <i class="pi" [class.pi-shield]="!safeMode" [class.pi-shield-fill]="safeMode"
+         [style.color]="safeMode ? 'var(--accent-red)' : 'var(--text-muted)'"></i>
+      <span [style.color]="safeMode ? 'var(--accent-red)' : 'var(--text-muted)'">
+        {{ safeMode ? 'SAFE MODE AKTIVAN' : 'Safe Mode: OFF' }}
+      </span>
+    </div>
+    <!-- Warning count -->
+    <div class="status-indicator">
+      <i class="pi pi-exclamation-triangle"
+         [style.color]="warningCount > 0 ? 'var(--accent-orange)' : 'var(--text-muted)'"></i>
+      <span [style.color]="warningCount > 0 ? 'var(--accent-orange)' : 'var(--text-muted)'">
+        High Temp Warnings: {{ warningCount }}/4
+      </span>
+    </div>
+    <!-- Oil pressure -->
+    <div class="status-indicator">
+      <i class="pi pi-tachometer"
+         [style.color]="oilCritical ? 'var(--accent-red)' : 'var(--text-muted)'"></i>
+      <span [style.color]="oilCritical ? 'var(--accent-red)' : 'var(--text-muted)'">
+        Pritisak ulja: {{ oilCritical ? 'KRITIČAN' : 'OK' }}
+      </span>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <div style="flex: 1; min-width: 200px;">
+      <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px;">
+        Do Safe Mode ({{ warningCount }}/4 upozorenja)
+      </div>
+      <p-progressBar
+        [value]="warningProgress"
+        [showValue]="false"
+        [style]="{'height': '8px', '--p-progressbar-value-background': warningProgressColor}">
+      </p-progressBar>
+    </div>
+    <p-button
+      label="Reset"
+      icon="pi pi-refresh"
+      severity="secondary"
+      size="small"
+      (click)="reset()"
+      pTooltip="Resetuje CEP sesiju i sve alarme"
+    ></p-button>
+  </div>
+</div>
+
+<div class="grid-2" style="align-items: start; gap: 24px; margin-top: 20px;">
+
+  <!-- LEVO: Kontrole -->
+  <div style="display: flex; flex-direction: column-reverse; gap: 20px;">
+
+    <p-card>
+      <ng-template pTemplate="title">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <i class="pi pi-fire" style="color: var(--accent-red);"></i>
+          Temperatura izduvnih gasova
+          <p-tag value="Scenario 1 - CEP" severity="info" [style]="{'font-size': '0.72rem'}"></p-tag>
+        </span>
+      </ng-template>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+
+        <!-- Presets -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div *ngFor="let p of tempPresets"
+            class="preset-chip"
+            (click)="applyTempPreset(p)"
+            [class.danger-chip]="p.temp > 850">
+            <i class="pi {{ p.icon }}" style="font-size: 0.85rem;"></i>
+            <div>
+              <div style="font-weight: 600; font-size: 0.82rem;">{{ p.label }}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">{{ p.description }}</div>
+            </div>
+          </div>
+        </div>
+
+        <p-divider></p-divider>
+
+        <div class="grid-2">
+          <div>
+            <div class="section-label">Temperatura (°C)</div>
+            <p-inputNumber [(ngModel)]="exhaustTemp" [min]="0" [max]="1100" [style]="{'width':'100%'}"></p-inputNumber>
+            <div style="margin-top: 4px; font-size: 0.75rem;"
+              [style.color]="exhaustTemp > 850 ? 'var(--accent-red)' : 'var(--text-muted)'">
+              {{ exhaustTemp > 850 ? '⚠ Iznad limita 850°C' : 'Ispod limita ✓' }}
+            </div>
+          </div>
+          <div>
+            <div class="section-label">RPM</div>
+            <p-inputNumber [(ngModel)]="rpmTemp" [min]="500" [max]="8000" [step]="100" [style]="{'width':'100%'}"></p-inputNumber>
+          </div>
+        </div>
+
+        <p-button
+          label="Pošalji događaj temperature"
+          icon="pi pi-send"
+          severity="danger"
+          [loading]="sendingTemp"
+          (click)="sendTempEvent()"
+          styleClass="w-full"
+        ></p-button>
+      </div>
+    </p-card>
+
+    <p-card>
+      <ng-template pTemplate="title">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <i class="pi pi-tachometer" style="color: var(--accent-orange);"></i>
+          Pritisak ulja
+          <p-tag value="Scenario 2 - CEP" severity="info" [style]="{'font-size': '0.72rem'}"></p-tag>
+        </span>
+      </ng-template>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+
+        <div style="display: flex; gap: 8px;">
+          <div *ngFor="let p of oilPresets"
+            class="preset-chip"
+            style="flex: 1;"
+            (click)="applyOilPreset(p)"
+            [class.danger-chip]="p.pressure < 1.2">
+            <i class="pi {{ p.icon }}" style="font-size: 0.85rem;"></i>
+            <div>
+              <div style="font-weight: 600; font-size: 0.82rem;">{{ p.label }}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">{{ p.description }}</div>
+            </div>
+          </div>
+        </div>
+
+        <p-divider></p-divider>
+
+        <div class="grid-2">
+          <div>
+            <div class="section-label">Pritisak (bar)</div>
+            <p-inputNumber [(ngModel)]="oilPressure" [minFractionDigits]="1" [min]="0" [max]="10" [style]="{'width':'100%'}"></p-inputNumber>
+            <div style="margin-top: 4px; font-size: 0.75rem;"
+              [style.color]="oilPressure < 1.2 ? 'var(--accent-red)' : 'var(--text-muted)'">
+              {{ oilPressure < 1.2 ? '⚠ Kritično nizak!' : 'Normalan ✓' }}
+            </div>
+          </div>
+          <div>
+            <div class="section-label">RPM</div>
+            <p-inputNumber [(ngModel)]="rpmOil" [min]="500" [max]="8000" [step]="100" [style]="{'width':'100%'}"></p-inputNumber>
+          </div>
+        </div>
+
+        <p-button
+          label="Pošalji događaj pritiska ulja"
+          icon="pi pi-send"
+          severity="warning"
+          [loading]="sendingOil"
+          (click)="sendOilEvent()"
+          styleClass="w-full"
+        ></p-button>
+      </div>
+    </p-card>
+
+  </div>
+
+  <!-- DESNO: Instrumenti + log -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- Safe mode banner -->
+    <div *ngIf="safeMode" class="decision-banner block" style="animation: pulse-border 1s infinite;">
+      <div class="decision-icon"><i class="pi pi-shield-fill" style="color: var(--accent-red); font-size: 2rem;"></i></div>
+      <div class="decision-text">
+        <h2 style="color: var(--accent-red);">🚨 SAFE MODE AKTIVAN</h2>
+        <p>Temperatura je prekoračila limit više od 3 puta u 20 sekundi. Pritisak turbine je automatski oborен.</p>
+      </div>
+    </div>
+
+    <!-- Instrumenti -->
+    <p-card>
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-gauge" style="margin-right: 8px; color: var(--accent-blue);"></i>Instrumenti</span>
+      </ng-template>
+      <div class="grid-3" style="gap: 12px;">
+        <!-- Temp gauge -->
+        <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <p-knob
+            [(ngModel)]="exhaustTemp"
+            [min]="0" [max]="1100"
+            [size]="110"
+            [strokeWidth]="8"
+            valueTemplate="{value}°"
+            [style]="{'--p-knob-value-color': exhaustTemp > 850 ? 'var(--accent-red)' : 'var(--accent-green)'}"
+          ></p-knob>
+          <div class="section-label">Temp. izduva</div>
+        </div>
+        <!-- RPM gauge -->
+        <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <p-knob
+            [(ngModel)]="rpmTemp"
+            [min]="0" [max]="8000"
+            [size]="110"
+            [strokeWidth]="8"
+            valueTemplate="{value}"
+            [style]="{'--p-knob-value-color': 'var(--accent-blue)'}"
+          ></p-knob>
+          <div class="section-label">RPM</div>
+        </div>
+        <!-- Oil pressure gauge -->
+        <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <p-knob
+            [(ngModel)]="oilPressure"
+            [min]="0" [max]="10"
+            [size]="110"
+            [strokeWidth]="8"
+            valueTemplate="{value}b"
+            [style]="{'--p-knob-value-color': oilPressure < 1.2 ? 'var(--accent-red)' : 'var(--accent-orange)'}"
+          ></p-knob>
+          <div class="section-label">Pritisak ulja</div>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- notifikacije iz notificationService-a -->
+    <p-card *ngIf="status?.notifications?.length">
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-bell" style="margin-right: 8px; color: var(--accent-orange);"></i>Drools notifikacije</span>
+      </ng-template>
+      <div style="display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto;">
+        <div *ngFor="let n of status!.notifications"
+          style="font-size: 0.8rem; padding: 6px 10px; border-radius: 4px; font-family: 'Courier New', monospace;"
+          [style.background]="n.includes('CRITICAL') || n.includes('SAFE') ? 'rgba(255,92,92,0.08)' : 'rgba(255,169,77,0.08)'"
+          [style.color]="n.includes('CRITICAL') || n.includes('SAFE') ? 'var(--accent-red)' : 'var(--accent-orange)'">
+          {{ n }}
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Event log -->
+    <p-card>
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-list" style="margin-right: 8px;"></i>Event log</span>
+      </ng-template>
+      <div *ngIf="!eventLog.length" style="color: var(--text-muted); text-align: center; padding: 16px; font-size: 0.85rem;">
+        Pošalji događaj da počne monitoring...
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow-y: auto;">
+        <div *ngFor="let e of eventLog"
+          style="display: grid; grid-template-columns: 70px 60px 1fr auto; gap: 10px;
+            align-items: center; padding: 6px 10px; border-radius: 4px;
+            font-size: 0.82rem;"
+          [style.background]="e.status === 'critical' ? 'rgba(255,92,92,0.06)' : e.status === 'warning' ? 'rgba(255,169,77,0.06)' : 'rgba(255,255,255,0.02)'">
+          <span style="color: var(--text-muted); font-family: monospace;">{{ e.time }}</span>
+          <p-tag [value]="e.type" severity="info" [style]="{'font-size': '0.7rem'}"></p-tag>
+          <span style="color: var(--text-primary);">{{ e.value }}</span>
+          <i class="pi"
+            [class.pi-check-circle]="e.status === 'normal'"
+            [class.pi-exclamation-triangle]="e.status === 'warning'"
+            [class.pi-times-circle]="e.status === 'critical'"
+            [style.color]="e.status === 'normal' ? 'var(--accent-green)' : e.status === 'warning' ? 'var(--accent-orange)' : 'var(--accent-red)'">
+          </i>
+        </div>
+      </div>
+    </p-card>
+
+  </div>
+</div>

@@ -1,0 +1,274 @@
+<div class="page-header">
+  <h1><i class="pi pi-wrench" style="color: var(--accent-blue); margin-right: 10px;"></i>Radionica</h1>
+  <p>Dijagnostika vozila • Validacija tuninga • Provera hardverskih preduslova</p>
+</div>
+
+<div class="grid-2" style="align-items: start; gap: 24px;">
+
+  <!-- LEVA KOLONA Forma -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- Podaci o vozilu -->
+    <p-card>
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-car" style="margin-right: 8px; color: var(--accent-blue);"></i>Podaci o vozilu</span>
+      </ng-template>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="grid-2">
+          <div>
+            <div class="section-label">ID Vozila</div>
+            <input pInputText [(ngModel)]="vehicleId" style="width:100%;" placeholder="VW-001" />
+          </div>
+          <div>
+            <div class="section-label">Marka</div>
+            <p-dropdown
+              [options]="brandOptions"
+              [(ngModel)]="vehicleBrand"
+              placeholder="Odaberi marku..."
+              [style]="{width:'100%'}"
+              [disabled]="!selectedEcu"
+              pTooltip="Prvo odaberi ECU tip">
+            </p-dropdown>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">ECU Tip</div>
+          <p-dropdown [options]="ecuOptions" [(ngModel)]="selectedEcu"
+            placeholder="Odaberi ECU..." [style]="{width:'100%'}"
+            optionLabel="label" optionValue="value"
+            (onChange)="onEcuChange()">
+          </p-dropdown>
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="section-label">Kilometraža</div>
+            <p-inputNumber [(ngModel)]="mileage" suffix=" km" [style]="{width:'100%'}" [min]="0"></p-inputNumber>
+          </div>
+          <div>
+            <div class="section-label">Max. torque menjača (Nm)</div>
+            <p-inputNumber [(ngModel)]="maxTorque" suffix=" Nm" [style]="{width:'100%'}" [min]="0"></p-inputNumber>
+          </div>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- DTC Kodovi -->
+    <p-card>
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-exclamation-triangle" style="margin-right: 8px; color: var(--accent-orange);"></i>DTC Greške</span>
+      </ng-template>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <p-tag
+            *ngFor="let code of knownDtcCodes"
+            [value]="code"
+            severity="warning"
+            [style]="{'cursor': 'pointer'}"
+            (click)="addDtc(code)"
+            pTooltip="Klikni da dodaš"
+          ></p-tag>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <input pInputText [(ngModel)]="dtcInput"
+            placeholder="Unesi DTC kod (npr. P0401)"
+            style="flex: 1;"
+            (keydown.enter)="addDtc(dtcInput)" />
+          <p-button icon="pi pi-plus" severity="secondary" (click)="addDtc(dtcInput)"></p-button>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; min-height: 32px;">
+          <p-tag
+            *ngFor="let code of dtcCodes"
+            [value]="code"
+            severity="danger"
+            [style]="{'cursor': 'pointer'}"
+            (click)="removeDtc(code)"
+            pTooltip="Klikni da ukloniš"
+          ></p-tag>
+          <span *ngIf="dtcCodes.length === 0" style="color: var(--text-muted); font-size: 0.85rem;">Nema DTC kodova</span>
+        </div>
+        <p-button
+          label="Pokreni dijagnostiku"
+          icon="pi pi-search"
+          severity="info"
+          [loading]="loadingDiagnosis"
+          (click)="runDiagnosis()"
+          styleClass="w-full"
+        ></p-button>
+      </div>
+    </p-card>
+
+    <!-- Tuning validacija -->
+    <p-card>
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-sliders-h" style="margin-right: 8px; color: var(--accent-green);"></i>Tuning Validacija</span>
+      </ng-template>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <div class="section-label">Nivo tuninga</div>
+          <p-dropdown [options]="tuningStageOptions" [(ngModel)]="tuningStage"
+            placeholder="Odaberi nivo..." [style]="{width:'100%'}"
+            optionLabel="label" optionValue="value">
+          </p-dropdown>
+        </div>
+        <div class="grid-3">
+          <div>
+            <div class="section-label">Boost (bar)</div>
+            <p-inputNumber [(ngModel)]="requestedBoost" [minFractionDigits]="1" [maxFractionDigits]="2" [min]="0" [max]="5"></p-inputNumber>
+          </div>
+          <div>
+            <div class="section-label">Temp (°C)</div>
+            <p-inputNumber [(ngModel)]="requestedTemp" [min]="0" [max]="1100"></p-inputNumber>
+          </div>
+          <div>
+            <div class="section-label">Torque (Nm)</div>
+            <p-inputNumber [(ngModel)]="requestedTorque" [min]="0" [max]="1000"></p-inputNumber>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">Komponente vozila</div>
+          <p-multiSelect
+            [options]="componentOptions"
+            [(ngModel)]="vehicleComponents"
+            placeholder="Odaberi ugrađene komponente..."
+            [style]="{width:'100%'}"
+            optionLabel="label"
+            optionValue="value"
+          ></p-multiSelect>
+        </div>
+        <p-button
+          label="Validiraj tuning"
+          icon="pi pi-check-circle"
+          severity="success"
+          [loading]="loadingTuning"
+          (click)="validateTuning()"
+          styleClass="w-full"
+        ></p-button>
+      </div>
+    </p-card>
+
+  </div>
+
+  <!-- DESNA KOLONA: Rezultati -->
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <div *ngIf="!hasResults" style="
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 300px; color: var(--text-muted); text-align: center; gap: 16px;
+      border: 1px dashed var(--border-accent); border-radius: var(--radius-card);
+    ">
+      <i class="pi pi-send" style="font-size: 2.5rem;"></i>
+      <div>
+        <div style="font-size: 1rem; font-weight: 600; margin-bottom: 4px;">Rezultati će se prikazati ovde</div>
+        <div style="font-size: 0.85rem;">Pokreni dijagnostiku ili validiraj tuning</div>
+      </div>
+    </div>
+
+    <!-- Dijagnostika rezultati -->
+    <p-card *ngIf="diagnosisResult">
+      <ng-template pTemplate="title">
+        <span><i class="pi pi-list-check" style="margin-right: 8px; color: var(--accent-blue);"></i>Dijagnostika - {{ diagnosisResult.vehicleId }}</span>
+      </ng-template>
+
+      <!-- Status komponenti -->
+      <div *ngIf="diagnosisResult.diagnosticResults?.length" [style]="{'margin-bottom': '16px'}">
+        <div class="section-label">Status komponenti</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+          <div *ngFor="let r of diagnosisResult.diagnosticResults"
+            style="display: flex; align-items: center; justify-content: space-between;
+              background: var(--bg-card-light); border-radius: var(--radius-sm); padding: 10px 14px;">
+            <span style="font-weight: 500;">{{ formatComponentStatus(r.componentStatus) }}</span>
+            <p-tag [value]="r.componentStatus" [severity]="dtcSeverity(r.componentStatus)"></p-tag>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preporucene akcije -->
+      <div *ngIf="diagnosisResult.tuningActions?.length" style="margin-bottom: 16px;">
+        <div class="section-label">Preporucene akcije</div>
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+          <div *ngFor="let a of diagnosisResult.tuningActions"
+            style="display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+            <i class="pi pi-arrow-right" style="color: var(--accent-orange); margin-top: 3px; flex-shrink: 0;"></i>
+            <span style="font-size: 0.9rem;">{{ a.description }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preporuceni alati -->
+      <div *ngIf="diagnosisResult.toolRecommendations?.length">
+        <div class="section-label">Preporuceni alati</div>
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+          <div *ngFor="let t of diagnosisResult.toolRecommendations"
+            style="display: flex; align-items: center; justify-content: space-between;
+              background: var(--bg-card-light); border-radius: var(--radius-sm); padding: 8px 14px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="pi pi-wrench" style="color: var(--accent-blue); font-size: 0.9rem;"></i>
+              <span style="font-weight: 600; font-size: 0.9rem;">{{ t.toolName }}</span>
+              <span *ngIf="t.protocol" style="font-size: 0.8rem; color: var(--text-muted);">— {{ t.protocol }}</span>
+            </div>
+            <p-tag [value]="t.actionType" severity="info" [style]="{'font-size': '0.72rem'}"></p-tag>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!diagnosisResult.diagnosticResults?.length && !diagnosisResult.tuningActions?.length"
+        style="color: var(--text-muted); text-align: center; padding: 16px;">
+        Nema DTC kodova za dijagnostiku ili ECU/brand nisu u bazi.
+      </div>
+    </p-card>
+
+    <!-- Tuning odluka -->
+    <div *ngIf="tuningResult">
+      <div class="decision-banner" [class.allow]="tuningResult.finalDecision === 'ALLOW'" [class.block]="tuningResult.finalDecision === 'BLOCK'">
+        <div class="decision-icon">
+          <i class="pi" [class.pi-check-circle]="tuningResult.finalDecision === 'ALLOW'"
+             [class.pi-times-circle]="tuningResult.finalDecision === 'BLOCK'"
+             [style.color]="tuningResult.finalDecision === 'ALLOW' ? 'var(--accent-green)' : 'var(--accent-red)'">
+          </i>
+        </div>
+        <div class="decision-text">
+          <h2 [style.color]="tuningResult.finalDecision === 'ALLOW' ? 'var(--accent-green)' : 'var(--accent-red)'">
+            {{ tuningResult.finalDecision === 'ALLOW' ? 'TUNING ODOBREN' : 'TUNING BLOKIRAN' }}
+          </h2>
+          <p>{{ tuningResult.templateDecision?.reason }}</p>
+        </div>
+      </div>
+
+      <!-- Missing components -->
+      <p-card *ngIf="tuningResult.missingComponents?.length" [style]="{'margin-top': '16px'}">
+        <ng-template pTemplate="title">
+          <span style="color: var(--accent-red);">
+            <i class="pi pi-exclamation-circle" style="margin-right: 8px;"></i>Nedostajuce komponente
+          </span>
+        </ng-template>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div *ngFor="let mc of tuningResult.missingComponents"
+            style="display: flex; justify-content: space-between; align-items: center;
+              background: rgba(255,92,92,0.06); border: 1px solid rgba(255,92,92,0.2);
+              border-radius: var(--radius-sm); padding: 10px 14px;">
+            <div>
+              <div style="font-weight: 600; color: var(--accent-red);">{{ mc.componentName }}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Potrebna za: {{ mc.requiredForStage }}</div>
+            </div>
+            <i class="pi pi-times" style="color: var(--accent-red);"></i>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Sve poruke -->
+      <p-card [style]="{'margin-top': '16px'}">
+        <ng-template pTemplate="title">
+          <span><i class="pi pi-info-circle" style="margin-right: 8px;"></i>Detalji odluke</span>
+        </ng-template>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div *ngFor="let msg of tuningResult.messages"
+            style="font-size: 0.85rem; color: var(--text-secondary); padding: 4px 0;
+              border-bottom: 1px solid var(--border-subtle);">
+            {{ msg }}
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+  </div>
+</div>
